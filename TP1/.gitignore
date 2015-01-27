@@ -3,3 +3,4 @@ test_dct8x8
 test_dct8
 *~
 srv/jpegenc
+data/brueghel.jpg
