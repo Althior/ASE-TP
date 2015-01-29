@@ -4,3 +4,4 @@ test_dct8
 *~
 srv/jpegenc
 data/brueghel.jpg
+gmon.out
