@@ -50,6 +50,7 @@ void print_labeledblock(char *text, short in[8][8]) {
 
 void slow_float_dct8x8(short pixel[8][8], short data[8][8]);
 void fast_float_dct8x8(short pixel[8][8], short data[8][8]);
+void fast_fixed_dct8x8(short pixel[8][8], short data[8][8]);
 
 int main() {
 	short fast_float_output[8][8];
@@ -60,6 +61,9 @@ int main() {
 
 	fast_float_dct8x8(insample,fast_float_output);
 	print_labeledblock("Fast dct8x8",fast_float_output);
+	
+	fast_fixed_dct8x8(insample,fast_float_output);
+	print_labeledblock("Fast dct8x8 (fixed)",fast_float_output);
 
 	printf("Done ...\n");
 	return 0;
