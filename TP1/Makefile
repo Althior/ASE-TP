@@ -28,8 +28,10 @@ clean:
 profile:
 	gprof ./jpegenc | less
 
-rebuild : clean all
+test: rebuild
+	./test_dct8
 	
+rebuild : clean all
 
 	
 	

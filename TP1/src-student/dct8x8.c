@@ -18,7 +18,7 @@
 #define C6 (2*(0.19134))
 #define C7 (2*(0.09755))
 
-#define TRACE
+//#define TRACE2
 
 float Av[8][8] = {
 		{ VAL00, VAL0x, VAL0x, VAL0x, VAL0x, VAL0x, VAL0x, VAL0x},
@@ -43,8 +43,35 @@ void fast_fixed_dct8(short in[8], short out[8]);
 void fast_fixed_dct8x8(short pixel[8][8], short data[8][8]);
 
 float cosPiN(float multiplier);
+short cosPiNfixed(float multiplier);
 void switchFloat(float *a, float *b);
 void switchShort(short *a, short *b);
+
+// Cos est compris entre -1 et 1, on le représente donc en Q1,14
+short cosPiNfixed(float multiplier){
+
+	float f = cos(multiplier*PI/16.0);
+	return (short)(f*(1 << 14));
+}
+
+// Passage d'un nombre en Q(mIn, nIn) en Q(mOut, nOut)
+short transformQ(short *input, short mIn, short mOut){
+
+	if(mIn > mOut){
+	
+		return *input << (mIn-mOut);
+	}
+	else if(mOut > mIn){
+	
+		return *input >> (mOut-mIn);
+	}
+}
+
+// Affiche un nombre a virgule fixe
+void afficher_fixe(short nb, short n){
+	
+	printf("%f ", (float)nb/(1<<n));
+}
 
 float cosPiN(float multiplier){
 
@@ -125,6 +152,15 @@ void fast_float_dct8x8(short pixel[8][8], short data[8][8])
 		fast_float_dct8(ping[i], pong[i]);
 	}
 	
+	//Afichage test après le deuxième passage
+	printf("Après deuxième passage : \n");
+	for(i=0; i<8; i++){
+		for(j=0; j<8; j++){
+			printf("%f ", pong[i][j]);			
+		}
+		printf("\n");
+	}
+	
 	for(i=0; i<8; i++){
 		for(j=0; j<8; j++){
 			ping[i][j] = pong[j][i];			
@@ -142,24 +178,54 @@ void fast_float_dct8x8(short pixel[8][8], short data[8][8])
 void fast_fixed_dct8x8(short pixel[8][8], short data[8][8])
 {
 	int i,j;
+	short temp[8][8];
 	
+	//1er passage
 	for(i=0; i<8; i++){
 		fast_fixed_dct8(pixel[i], data[i]);
 	}
-	
+
+	//Afichage test après le premier passage
+	printf("Après premier passage : \n");
 	for(i=0; i<8; i++){
 		for(j=0; j<8; j++){
-			pixel[i][j] = data[j][i];			
+			printf("%hi ", data[i][j]);			
+		}
+		printf("\n");
+	}
+	
+	// Inversion lignes/colonnes
+	for(i=0; i<8; i++){
+		for(j=0; j<8; j++){
+			temp[i][j] = data[j][i];			
 		}
 	}
 	
+	// 2ème passage
 	for(i=0; i<8; i++){
-		fast_fixed_dct8(pixel[i], data[i]);
+		fast_fixed_dct8(temp[i], data[i]);
 	}
 	
+	// Remise à l'état normal
 	for(i=0; i<8; i++){
 		for(j=0; j<8; j++){
-			pixel[i][j] = data[j][i];			
+			temp[i][j] = data[j][i];			
+		}
+	}
+	
+	//Afichage test après le deuxième passage
+	printf("Après deuxième passage : \n");
+	for(i=0; i<8; i++){
+		for(j=0; j<8; j++){
+			printf("%hi ", temp[i][j]);			
+		}
+		printf("\n");
+	}
+	
+	// Inscription du résultat dans data
+	for(i=0; i<8; i++){
+		for(j=0; j<8; j++){
+			data[i][j] = temp[i][j];			
 		}
 	}
 }
@@ -302,33 +368,34 @@ void fast_fixed_dct8(short in[8], short out[8]) {
 	int k,n,i, temp;
 	short tmp[8], tmp2[8], tmp3[8];
 	short cPi[8];
-	
+
 	//Initialisation des cos(kPI/16.0)
 	for(i=1; i<8; i++){
 		
-		// Conversion en Q(0,15) avec troncature
-		cPi[i] = (short)(cosPiN((float)i)*(1<<15));
+		// Conversion en Q(1,14)
+		cPi[i] = cosPiNfixed((float)i);
 	}
 	
-#ifdef TRACE
-	printf("\n==== Input ====\n");
+	#ifdef TRACE2
+	printf("\n\n==== Input ====\n");
 	for (i=0;i<8;i++) {
 		printf("input[%d] = %hi\n",i,in[i]);
 	}
-#endif
+	#endif
 
-	// Etage 1
+	// Etage 1 (On laisse tout en Q(15,0) car les nombres sont des entiers)
 	
 	// res 0-3
 	for(i=0;i<4;i++){
 		tmp[i] = in[i] + in[7-i];
 	}
+	
 	// res 4-7
 	for(i=4;i<8;i++){
 		tmp[i] = in[7-i] - in[i];
 	}
 	
-#ifdef TRACE
+#ifdef TRACE2
 	printf("\n==== Stage 1 ====\n");
 	for (i=0;i<8;i++) {
 		printf("stage1[%d] = %hi\n",i,tmp[i]);
@@ -348,77 +415,103 @@ void fast_fixed_dct8(short in[8], short out[8]) {
 	
 		tmp2[i] = tmp[i-2] - tmp[i];
 	}
-	
-	// res 4-7
+
 	tmp2[4] = tmp[4];
 	
-	//Passage du résultat en Q(10, 5)
-	tmp2[5] = (short) (( (int)tmp[5]*(-cPi[4]) + (int)tmp[6]*cPi[4] ) >> 10);
-	tmp2[6] = (short)(((int)tmp[6]*cPi[4] + (int)tmp[5]*cPi[4] ) >> 10);
+	//Passage du résultat de Q(15,0)*Q(1,14) = Q(16,14) en Q(9,6), donc décalage de 8 bits vers la droite 
+	tmp2[5] = (short) (( (int)tmp[5]*(-cPi[4]) + (int)tmp[6]*cPi[4] ) >> 8);
+	tmp2[6] = (short) (((int)tmp[6]*cPi[4] + (int)tmp[5]*cPi[4] ) >> 8);
 	
 	tmp2[7] = tmp[7];
 	
-#ifdef TRACE
+#ifdef TRACE2
 	printf("\n==== Stage 2 ====\n");
 	for (i=0;i<8;i++) {
 		
 		if(i!=5 && i!= 6){
+		
 			printf("stage2[%d] = %d\n",i,tmp2[i]);
 		}
 		else{
 		
-			printf("stage2[%d] = %f\n",i,((float)tmp2[i]/(1<<5)));
+			printf("stage2[%d] = ", i);
+			afficher_fixe(tmp2[i], 6);
+			printf("\n");
 		}
 	}
 #endif
 
 	// Etage 3
 
-	tmp3[0] = tmp2[0]*cPi[4] + tmp2[1]*cPi[4];
-	tmp3[1] = tmp2[0]*cPi[4] + tmp2[1]*(-cPi[4]);
-	tmp3[2] = tmp2[2]*cPi[6] + tmp2[3]*cPi[2];
-	tmp3[3] = tmp2[3]*cPi[6] + tmp2[2]*(-cPi[2]);
+	// On a Q(15,0)*Q(1,14)+Q(15,0)*Q(1,14) = Q(16,14) qu'on passe en Q(11,4) donc décalage de 10 bits vers la doite
+	tmp3[0] = (short) (( (int)tmp2[0]*cPi[4] + (int)tmp2[1]*cPi[4]) >> 10);
+	tmp3[1] = (short) (( (int)tmp2[0]*cPi[4] + (int)tmp2[1]*(-cPi[4])) >> 10);
 	
-	// Q15.0 -> Q10.5
-	tmp3[4] = tmp2[4] + tmp2[5];
-	tmp3[5] = tmp2[4] - tmp2[5];
-	tmp3[6] = tmp2[7] - tmp2[6];
-	tmp3[7] = tmp2[6] + tmp2[7];
+	// On a Q(15,0)*Q(1,14)+Q(15,0)*Q(1,14) = Q(16,14) qu'on passe en Q(10,5) donc décalage de 9 bits vers la droite
+	tmp3[2] = (short) (( (int)tmp2[2]*cPi[6] + (int)tmp2[3]*cPi[2]) >> 9);
+	tmp3[3] = (short) (( (int)tmp2[3]*cPi[6] + (int)tmp2[2]*(-cPi[2])) >> 9);
 	
-#ifdef TRACE
+	// On peut passer tmp2[4] et tmp2[7] en Q(9,6) sans perte d'information (utilisé dans les 2 prochaines opérations)
+	tmp2[4] = tmp2[4] << 6;
+	tmp2[7] = tmp2[7] << 6;
+	
+	// Q(9,6)+Q(9,6) en Q(10,5) donc décalage de 1 bit vers la droite pour les prochaine opération
+	tmp3[4] = (short) (( (int)tmp2[4] + tmp2[5]) >> 1);
+	tmp3[5] = (short) (( (int)tmp2[4] - tmp2[5]) >> 1);
+	tmp3[6] = (short) (( (int)tmp2[7] - tmp2[6]) >> 1);
+	tmp3[7] = (short) (( (int)tmp2[6] + tmp2[7]) >> 1);
+	
+#ifdef TRACE2
 	printf("\n==== Stage 3 ====\n");
-	for (i=0;i<8;i++) {
-		printf("stage3[%d] = %f\n",i,tmp3[i]);
+	
+	for(i=0;i<2;i++) {
+	
+		printf("stage3[%d] = ",i);
+		afficher_fixe(tmp3[i], 4);
+		printf("\n");
 	}
+	
+	for(;i<8;i++) {
+	
+		printf("stage3[%d] = ",i);
+		afficher_fixe(tmp3[i], 5);
+		printf("\n");
+	}	
 #endif
 
 	// Etage 4
 
-	// Res 0-3
-	for(i=0; i<4; i++){
+	// Passage de tous les résultats en Q(15,0) pour retourner dans les entiers
+	for(i=0; i<2; i++){
 	
-		out[i] = tmp3[i];
+		out[i] = tmp3[i] >> 4;
 	}
 	
-	out[4] = tmp3[4]*cPi[7] + tmp3[7]*cPi[1];
-	out[5] = tmp3[5]*cPi[3] + tmp3[6]*cPi[5];
-	out[6] = tmp3[6]*cPi[3] + tmp3[5]*(-cPi[5]);
-	out[7] = tmp3[7]*cPi[7] + tmp3[4]*(-cPi[1]);
+	for(; i<4; i++){
+	
+		out[i] = tmp3[i] >> 5;
+	}
+
+	/* Passage de Q(1,14)*Q(10,5)+Q(1,14)*Q(10,5) = Q(11,19) en Q(15,0) donc décalage de 19 bits vers la droite*/
+	out[4] = (short)(( (int)tmp3[4]*cPi[7] + (int)tmp3[7]*cPi[1]) >> 19);
+	out[5] = (short)(( (int)tmp3[5]*cPi[3] + (int)tmp3[6]*cPi[5]) >> 19);
+	out[6] = (short)(( (int)tmp3[6]*cPi[3] + (int)tmp3[5]*(-cPi[5])) >> 19);
+	out[7] = (short)(( (int)tmp3[7]*cPi[7] + (int)tmp3[4]*(-cPi[1])) >> 19);
 	
 	// Réorganisation
 	switchShort(&out[1], &out[4]);
 	switchShort(&out[3], &out[6]);
-	
+
 	// Division des résultats par 2
 	for(i=0; i<8; i++){
 	
-		out[i] /= 2.0;
+		out[i] /= 2;
 	}
 	
-#ifdef TRACE
+#ifdef TRACE2
 	printf("\n==== Output ====\n");
 	for (i=0;i<8;i++) {
-		printf("output[%d] = %f\n",i,out[i]);
+		printf("output[%d] = %hi\n", i, out[i]);
 	}
 #endif
 }
