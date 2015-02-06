@@ -16,6 +16,16 @@ void print_vector(char* mess, float* in) {
 	fflush(stdout);
 }
 
+void print_vector_fixed(char* mess, short* in) {
+	int i,j;
+	printf("\nVector %s :\n",mess);
+	for (i=0;i<8;i++) {
+		printf("%hi ",in[i]);
+	}
+	printf("\n");
+	fflush(stdout);
+}
+
 extern void slow_float_dct8(float in[8],float out[8]);
 extern void fast_float_dct8(float in[8],float out[8]);
 extern void fast_fixed_dct8(short in[8],short out[8]);
@@ -37,5 +47,7 @@ int main() {
 	print_vector("Fast output ",float_output);
 	
 	fast_fixed_dct8(insample8_fixed, fixed_output);
+	print_vector_fixed("Fast fixed output ",fixed_output);
+	
 	return 0;
 }
