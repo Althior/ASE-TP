@@ -57,43 +57,44 @@
 :dct
 
 	nop nop nop nop;;
-	
+	/* Ne pas utiliser ça en optimisé */
 	/* Chargement xin dans les registres */
-	ldh r3, 0(r2) nop nop nop;;
+	nop ldh r3, 0(r2) nop nop;;
 	nop nop nop nop;;
-	ldh r4, 4(r2) nop nop nop;;
+	nop ldh r4, 2(r2) nop nop;;
 	nop nop nop nop;;
-	ldh r5, 8(r2) nop nop nop;;
+	nop ldh r5, 4(r2) nop nop;;
 	nop nop nop nop;;
-	ldh r6, 12(r2) nop nop nop;;
+	nop ldh r6, 6(r2) nop nop;;
 	nop nop nop nop;;
-	ldh r7, 16(r2) nop nop nop;;
+	nop ldh r7, 8(r2) nop nop;;
 	nop nop nop nop;;
-	ldh r8, 20(r2) nop nop nop;;
+	nop ldh r8, 10(r2) nop nop;;
 	nop nop nop nop;;
-	ldh r9, 24(r2) nop nop nop;;
+	nop ldh r9, 12(r2) nop nop;;
 	nop nop nop nop;;
-	ldh r10, 28(r2) nop nop nop;;
+	nop ldh r10, 14(r2) nop nop;;
 	nop nop nop nop;;
 	
 	/* Chargement des cos */
-	ldh r24, 0(C1) nop nop nop;;
+	nop ldh r24, C1(r0) nop nop;;
 	nop nop nop nop;;
-	ldh r25, 0(C2) nop nop nop;;
+	nop ldh r25, C2(r0) nop nop;;
 	nop nop nop nop;;
-	ldh r26, 0(C3) nop nop nop;;
+	nop ldh r26, C3(r0) nop nop;;
 	nop nop nop nop;;
-	ldh r27, 0(C4) nop nop nop;;
+	nop ldh r27, C4(r0) nop nop;;
 	nop nop nop nop;;
-	ldh r28, 0(C5) nop nop nop;;
+	nop ldh r28, C5(r0) nop nop;;
 	nop nop nop nop;;
-	ldh r29, 0(C6) nop nop nop;;
+	nop ldh r29, C6(r0) nop nop;;
 	nop nop nop nop;;
-	ldh r30, 0(C7) nop nop nop;;
+	nop ldh r30, C7(r0) nop nop;;
 	nop nop nop nop;;
 	
-	
-	/* Etape 1 */
+:etape1
+
+	/* Etape 1 - Déplacer sur les bons pipelines */
 	add r11, r3, r10
 	add r12, r4, r9 
 	add r13, r5, r8
@@ -105,8 +106,13 @@
 	nop;;
 
 	sub r17, r4, r9 
+	nop
 	sub r18, r3, r10
-	nop nop;;
+	nop;;
+
+	nop nop nop nop;;
+
+:etape2
 
 	/* === Etape 2 === */
 
@@ -115,24 +121,38 @@
 	sub r5, r12, r13
 	nop;;
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	sub r6, r11, r14
 	slli r7, r15, 14 
 	sub r8, r17, r16 /* Intermédiaire */
 	nop;;
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	add r9, r17, r16 /* Intermédiaire */
 	slli r10, r18, 14
 	nop
-	mult r8, r8, r27;;
-
-	nop
-	nop
-	nop
-	mult r9, r9, r27;;
+	mul r8, r8, r27;;
 
 	nop nop nop nop;;
 	nop nop nop nop;;
 	nop nop nop nop;;
+
+	nop
+	nop
+	nop
+	mul r9, r9, r27;;
+
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
+:etape3
 
 	/* === Etape 3 === */
 
@@ -141,18 +161,34 @@
 	add r15, r7, r8 /* Intermédiaire */
 	nop;;
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	sub r16, r7, r8 	/* Intermédiaire */
 	sub r17, r10, r9 /* Intermédiaire */
 	add r18, r10, r9 /* Intermédiaire */
 	mul r11, r11, r27;;
+
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
 
 	srai r15, r15, 14
 	srai r16, r16, 14
 	srai r17, r17, 14
 	mul r12, r12, r27;;
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	srai r18, r18, 14
 	nop nop nop;;
+
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
 
 	nop nop nop
 	mul r13, r6, r25;;
@@ -186,41 +222,80 @@
 	sub r14, r19, r14
 	nop nop nop;;
 
+:etape4
+
 	/* === Etape 4 === */
-	srai r3, r11, 14
-	srai r4, r12, 14
-	srai r5, r13, 14
+	srai r3, r11, 15
+	srai r4, r12, 15
+	srai r5, r13, 15
 	mul r7, r24, r18;; /* Temporaire */
 
-	srai r6, r14, 14
-	sth r3, 0(xout)
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
+	srai r6, r14, 15
+	sth r3, xout(r0)
 	nop
 	mul r19, r30, r15;; /* Temporaire */
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
+	addi r3, r0, xout
 	nop
-	sth r4, 16(xout)
+	nop
+	nop;;
+
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
+	nop
+	sth r4, 8(r3)
 	nop
 	mul r8, r28, r17;; /* Temporaire */
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	nop
-	sth r5, 8(xout)
+	sth r5, 4(r3)
 	nop
 	mul r20, r26, r16;; /* Temporaire */
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	nop
-	sth r6, 24(xout)
+	sth r6, 12(r3)
 	nop
 	mul r9, r26, r17;; /* Temporaire */
+
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
 
 	nop
 	nop
 	nop
 	mul r21, r28, r16;; /* Temporaire */
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	nop
 	nop
 	nop
 	mul r10, r30, r18;; /* Temporaire */
+
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
 
 	nop
 	nop
@@ -236,28 +311,48 @@
 	sub r9, r9, r21
 	nop;;
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	sub r10, r10, r22
-	srai r7, r7, 14
-	srai r8, r8, 14
+	srai r7, r7, 15
+	srai r8, r8, 15
 	nop;;
 
-	srai r9, r9, 14
-	sth r7, 4(xout)
-	srai r10, r10, 14
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
+	srai r9, r9, 15
+	sth r7, 2(r3)
+	srai r10, r10, 15
 	nop;;
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	nop
-	sth r8, 20(xout)
+	sth r8, 10(r3)
 	nop
 	nop;;
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	nop
-	sth r9, 12(xout)
+	sth r9, 6(r3)
 	nop
 	nop;;
 
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+
 	nop
-	sth r10, 28(xout)
+	sth r10, 14(r3)
 	nop
 	nop;;
 
