@@ -55,62 +55,56 @@
 	trap nop nop nop;; 
 
 :dct
+	
+	/* Chargement + étape 1 */
 
 	nop nop nop nop;;
 	/* Ne pas utiliser ça en optimisé */
 	/* Chargement xin dans les registres */
-	nop ldh r3, 0(r2) nop nop;;
-	nop nop nop nop;;
-	nop ldh r4, 2(r2) nop nop;;
-	nop nop nop nop;;
-	nop ldh r5, 4(r2) nop nop;;
-	nop nop nop nop;;
-	nop ldh r6, 6(r2) nop nop;;
-	nop nop nop nop;;
-	nop ldh r7, 8(r2) nop nop;;
-	nop nop nop nop;;
-	nop ldh r8, 10(r2) nop nop;;
-	nop nop nop nop;;
-	nop ldh r9, 12(r2) nop nop;;
-	nop nop nop nop;;
-	nop ldh r10, 14(r2) nop nop;;
-	nop nop nop nop;;
+	nop ldh r3, 0(r2) 		nop nop;;
+	nop ldh r10, 14(r2) 	nop nop;;
+	nop ldh r6, 6(r2)		nop nop;;
+	nop ldh r7, 8(r2)	 	nop nop;;
+	nop ldh r5, 4(r2) 		nop nop;;
+	nop ldh r8, 10(r2) 	nop nop;;
 	
-	/* Chargement des cos */
-	nop ldh r24, C1(r0) nop nop;;
-	nop nop nop nop;;
+	add r11, r3, r10	
+	ldh r4, 2(r2) 
+	sub r18, r3, r10 
+	nop;;
+
+	nop  ldh r9, 12(r2) nop nop;;
+	
+	add r14, r6, r7
+	ldh r24, C1(r0)
+	sub r15, r6, r7
+	nop;;
+
 	nop ldh r25, C2(r0) nop nop;;
-	nop nop nop nop;;
-	nop ldh r26, C3(r0) nop nop;;
-	nop nop nop nop;;
+
+	add r13, r5, r8
+	ldh r26, C3(r0)
+	sub r16, r5, r8
+	nop;;
+
 	nop ldh r27, C4(r0) nop nop;;
-	nop nop nop nop;;
-	nop ldh r28, C5(r0) nop nop;;
-	nop nop nop nop;;
+
+	add r12, r4, r9
+	ldh r28, C5(r0) 
+	sub r17, r4, r9
+	nop;;
+
 	nop ldh r29, C6(r0) nop nop;;
-	nop nop nop nop;;
 	nop ldh r30, C7(r0) nop nop;;
+	
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
+	nop nop nop nop;;
 	nop nop nop nop;;
 	
 :etape1
 
-	/* Etape 1 - Déplacer sur les bons pipelines */
-	add r11, r3, r10
-	add r12, r4, r9 
-	add r13, r5, r8
-	nop;;
-
-	add r14, r6, r7
-	sub r15, r6, r7 
-	sub r16, r5, r8
-	nop;;
-
-	sub r17, r4, r9 
-	nop
-	sub r18, r3, r10
-	nop;;
-
-	nop nop nop nop;;
 
 :etape2
 
